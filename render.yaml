@@ -16,7 +16,3 @@ services:
         sync: false
       - key: DATABASE_URL
         value: sqlite:///./data/intelliknow.db
-    disk:
-      name: intelliknow-data
-      mountPath: /opt/render/project/src/backend/data
-      sizeGB: 1
