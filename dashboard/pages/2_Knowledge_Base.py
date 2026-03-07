@@ -6,6 +6,16 @@ st.set_page_config(page_title="Knowledge Base", page_icon="📚")
 
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
+def format_file_size(size_bytes):
+    """Convert bytes to human-readable format"""
+    if size_bytes == 0:
+        return "0 B"
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if size_bytes < 1024.0:
+            return f"{size_bytes:.1f} {unit}"
+        size_bytes /= 1024.0
+    return f"{size_bytes:.1f} TB"
+
 st.title("📚 Knowledge Base Management")
 
 st.subheader("Upload Document")
@@ -52,12 +62,14 @@ try:
         docs = response.json()
         if docs:
             for doc in docs:
-                col1, col2, col3 = st.columns([3, 1, 1])
+                col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
                 with col1:
                     st.text(f"📄 {doc['filename']}")
                 with col2:
-                    st.text(f"Chunks: {doc['chunk_count']}")
+                    st.text(f"Size: {format_file_size(doc.get('file_size', 0))}")
                 with col3:
+                    st.text(f"Chunks: {doc['chunk_count']}")
+                with col4:
                     if st.button("Delete", key=f"del_{doc['id']}"):
                         try:
                             resp = requests.delete(f"{BACKEND_URL}/api/documents/{doc['id']}")

@@ -20,6 +20,7 @@ class Document(Base):
     filename = Column(String(255), nullable=False)
     file_type = Column(String(10), nullable=False)
     file_path = Column(String(500))
+    file_size = Column(Integer, default=0)  # File size in bytes
     upload_date = Column(DateTime, default=datetime.utcnow)
     processed = Column(Boolean, default=False)
     chunk_count = Column(Integer, default=0)

@@ -14,9 +14,12 @@ build/
 .env
 .env.local
 
-data/intelliknow.db
-data/uploads/*
-data/faiss_index/*
+# Database and data files
+backend/data/intelliknow.db
+backend/data/uploads/*
+backend/data/faiss_index/*
+!backend/data/uploads/.gitkeep
+!backend/data/faiss_index/.gitkeep
 
 .DS_Store
 .idea/
@@ -25,3 +28,7 @@ data/faiss_index/*
 *.swo
 
 *.log
+
+# Temp files
+~$*
+repomix-output.xml

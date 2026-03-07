@@ -22,13 +22,17 @@ async def upload_document(file: UploadFile = File(...), intent_ids: str = "", db
     file_path = f"data/uploads/{file.filename}"
     os.makedirs("data/uploads", exist_ok=True)
 
+    # Save file and get size
     with open(file_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
+
+    file_size = os.path.getsize(file_path)
 
     doc = Document(
         filename=file.filename,
         file_type=file.filename.split('.')[-1],
-        file_path=file_path
+        file_path=file_path,
+        file_size=file_size
     )
     db.add(doc)
     db.commit()
@@ -47,7 +51,14 @@ async def upload_document(file: UploadFile = File(...), intent_ids: str = "", db
 @router.get("/documents")
 async def list_documents(db: Session = Depends(get_db)):
     docs = db.query(Document).all()
-    return [{"id": d.id, "filename": d.filename, "processed": d.processed, "chunk_count": d.chunk_count, "access_count": d.access_count} for d in docs]
+    return [{
+        "id": d.id,
+        "filename": d.filename,
+        "processed": d.processed,
+        "chunk_count": d.chunk_count,
+        "access_count": d.access_count,
+        "file_size": d.file_size
+    } for d in docs]
 
 @router.delete("/documents/{doc_id}")
 async def delete_document(doc_id: int, db: Session = Depends(get_db)):
