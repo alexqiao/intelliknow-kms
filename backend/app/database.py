@@ -3,6 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
 import os
+from app.config import get_settings
 
 Base = declarative_base()
 
@@ -60,8 +61,9 @@ class FrontendConfig(Base):
     status = Column(String(50), default="inactive")
     created_at = Column(DateTime, default=datetime.utcnow)
 
+settings = get_settings()
 os.makedirs("data", exist_ok=True)
-engine = create_engine("sqlite:///data/intelliknow.db")
+engine = create_engine(settings.database_url)
 SessionLocal = sessionmaker(bind=engine)
 
 def init_db():

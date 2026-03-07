@@ -3,7 +3,7 @@ from functools import lru_cache
 import os
 
 class Settings(BaseSettings):
-    qwen_api_key: str
+    qwen_api_key: str = ""
     database_url: str = "sqlite:///./data/intelliknow.db"
     telegram_bot_token: str = ""
     slack_bot_token: str = ""
