@@ -7,6 +7,10 @@ from app.services.vector_store import VectorStore
 from app.config import get_settings
 import os
 import shutil
+import logging
+import traceback
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 settings = get_settings()
@@ -16,37 +20,49 @@ vector_store = VectorStore(dimension=1024)
 
 @router.post("/documents/upload")
 async def upload_document(file: UploadFile = File(...), intent_ids: str = "", db: Session = Depends(get_db)):
-    if not file.filename.endswith(('.pdf', '.docx')):
-        raise HTTPException(400, "Only PDF and DOCX files are supported")
+    try:
+        logger.info(f"Upload started: {file.filename}, content_type: {file.content_type}")
 
-    file_path = f"data/uploads/{file.filename}"
-    os.makedirs("data/uploads", exist_ok=True)
+        if not file.filename.endswith(('.pdf', '.docx')):
+            raise HTTPException(400, "Only PDF and DOCX files are supported")
 
-    # Save file and get size
-    with open(file_path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+        file_path = f"data/uploads/{file.filename}"
+        os.makedirs("data/uploads", exist_ok=True)
 
-    file_size = os.path.getsize(file_path)
+        # Save file and get size
+        with open(file_path, "wb") as f:
+            shutil.copyfileobj(file.file, f)
 
-    doc = Document(
-        filename=file.filename,
-        file_type=file.filename.split('.')[-1],
-        file_path=file_path,
-        file_size=file_size
-    )
-    db.add(doc)
-    db.commit()
-    db.refresh(doc)
+        file_size = os.path.getsize(file_path)
+        logger.info(f"File saved: {file_path}, size: {file_size} bytes")
 
-    if intent_ids:
-        for intent_id in intent_ids.split(','):
-            db.add(DocumentIntent(document_id=doc.id, intent_id=int(intent_id)))
+        doc = Document(
+            filename=file.filename,
+            file_type=file.filename.split('.')[-1],
+            file_path=file_path,
+            file_size=file_size
+        )
+        db.add(doc)
         db.commit()
+        db.refresh(doc)
+        logger.info(f"DB record created: doc_id={doc.id}")
 
-    processor = DocumentProcessor(llm_service, vector_store, db)
-    chunk_count = await processor.process_document(file_path, doc.id)
+        if intent_ids:
+            for intent_id in intent_ids.split(','):
+                db.add(DocumentIntent(document_id=doc.id, intent_id=int(intent_id)))
+            db.commit()
 
-    return {"id": doc.id, "filename": file.filename, "chunks": chunk_count}
+        logger.info(f"Starting document processing: doc_id={doc.id}")
+        processor = DocumentProcessor(llm_service, vector_store, db)
+        chunk_count = await processor.process_document(file_path, doc.id)
+        logger.info(f"Processing complete: {chunk_count} chunks")
+
+        return {"id": doc.id, "filename": file.filename, "chunks": chunk_count}
+
+    except Exception as e:
+        logger.error(f"Upload failed for {file.filename}: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(500, f"Upload failed: {str(e)}")
 
 @router.get("/documents")
 async def list_documents(db: Session = Depends(get_db)):

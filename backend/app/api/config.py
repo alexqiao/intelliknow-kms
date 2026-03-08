@@ -41,6 +41,19 @@ async def save_frontend_config(config: FrontendConfigCreate, db: Session = Depen
         db.add(new_config)
 
     db.commit()
+
+    # Setup webhook for Telegram
+    if config.platform == "telegram" and config.enabled:
+        from app.services.telegram_client import TelegramClient
+        bot_token = config.credentials.get("bot_token")
+        webhook_url = config.credentials.get("webhook_url")
+        if bot_token and webhook_url:
+            try:
+                client = TelegramClient(bot_token)
+                await client.setup_webhook(webhook_url)
+            except Exception as e:
+                pass  # Don't fail if webhook setup fails
+
     return {"ok": True, "platform": config.platform}
 
 @router.post("/config/frontend/{platform}/test")
