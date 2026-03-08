@@ -14,6 +14,17 @@ class DocumentProcessor:
         )
 
     async def process_document(self, file_path: str, doc_id: int):
+        from app.database import DocumentChunk
+
+        # Clean up existing chunks if document is being reprocessed
+        existing_chunks = self.db.query(DocumentChunk).filter(DocumentChunk.document_id == doc_id).all()
+        if existing_chunks:
+            for chunk in existing_chunks:
+                self.db.delete(chunk)
+            self.db.commit()
+            # Rebuild FAISS index to remove old vectors
+            self.vector_store.remove_document(doc_id)
+
         text = self._extract_text(file_path)
         chunks = self.splitter.split_text(text)
         embeddings = await self.llm.generate_embeddings(chunks)
