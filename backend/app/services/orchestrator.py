@@ -1,5 +1,6 @@
 import json
 import time
+import asyncio
 from typing import List, Dict, Tuple
 from app.database import Intent, QueryLog, Document, DocumentChunk, DocumentIntent
 
@@ -13,11 +14,14 @@ class QueryOrchestrator:
     async def process_query(self, query: str, source: str, user_id: str) -> Dict:
         start_time = time.time()
 
-        intent, confidence = await self._classify_intent(query)
+        (intent, confidence), query_embeddings = await asyncio.gather(
+            self._classify_intent(query),
+            self.llm.generate_embeddings([query])
+        )
         if confidence < self.confidence_threshold:
             intent = "General"
 
-        chunks = await self._retrieve_chunks(query, intent, top_k=5)
+        chunks = await self._retrieve_chunks(query_embeddings[0], intent, top_k=5)
         response = await self._generate_response(query, chunks)
 
         response_time = int((time.time() - start_time) * 1000)
@@ -53,9 +57,8 @@ Respond in JSON format:
             print(f"JSON Parsing Error: {e} - Raw Output: {response}")
             return "General", 0.5
 
-    async def _retrieve_chunks(self, query: str, intent: str, top_k: int) -> List[Dict]:
-        query_embedding = await self.llm.generate_embeddings([query])
-        results = self.vector_store.search(query_embedding[0], 20, intent)
+    async def _retrieve_chunks(self, query_embedding: List[float], intent: str, top_k: int) -> List[Dict]:
+        results = self.vector_store.search(query_embedding, 50, intent)
 
         # Get intent_id for filtering
         intent_obj = self.db.query(Intent).filter(Intent.name == intent).first()
@@ -98,7 +101,7 @@ Respond in JSON format:
         # Fallback mechanism
         if not enriched and intent != "General":
             print(f"⚠️ Intent '{intent}' returned no results. Falling back to General search.")
-            return await self._retrieve_chunks(query, "General", top_k)
+            return await self._retrieve_chunks(query_embedding, "General", top_k)
 
         return enriched[:top_k]
 

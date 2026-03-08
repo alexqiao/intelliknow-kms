@@ -82,6 +82,7 @@ async def delete_document(doc_id: int, db: Session = Depends(get_db)):
     if not doc:
         raise HTTPException(404, "Document not found")
 
+    vector_store.remove_document(doc_id)
     db.delete(doc)
     db.commit()
     return {"ok": True}
