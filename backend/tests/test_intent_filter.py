@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 async def test_intent_filtering():
     from app.services.llm_service import QwenLLMService
-    from app.services.vector_store import VectorStore
+    from app.dependencies import vector_store_instance
     from app.services.orchestrator import QueryOrchestrator
     from app.database import SessionLocal
     from app.config import get_settings
@@ -14,9 +14,8 @@ async def test_intent_filtering():
     print("🧪 测试意图过滤功能\n")
     settings = get_settings()
     llm = QwenLLMService(settings.qwen_api_key)
-    vector_store = VectorStore(dimension=1024)
     db = SessionLocal()
-    orchestrator = QueryOrchestrator(llm, vector_store, db)
+    orchestrator = QueryOrchestrator(llm, vector_store_instance, db)
 
     # 测试 HR 查询
     print("1️⃣ 测试 HR 查询...")

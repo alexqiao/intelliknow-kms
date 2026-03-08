@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db, QueryLog
 from app.services.orchestrator import QueryOrchestrator
 from app.services.llm_service import QwenLLMService
-from app.services.vector_store import VectorStore
+from app.dependencies import vector_store_instance
 from app.config import get_settings
 from pydantic import BaseModel
 
@@ -11,7 +11,6 @@ router = APIRouter()
 settings = get_settings()
 
 llm_service = QwenLLMService(settings.qwen_api_key)
-vector_store = VectorStore(dimension=1024)
 
 class QueryRequest(BaseModel):
     query: str
@@ -20,7 +19,7 @@ class QueryRequest(BaseModel):
 
 @router.post("/query")
 async def process_query(req: QueryRequest, db: Session = Depends(get_db)):
-    orchestrator = QueryOrchestrator(llm_service, vector_store, db)
+    orchestrator = QueryOrchestrator(llm_service, vector_store_instance, db)
     result = await orchestrator.process_query(req.query, req.source, req.user_id)
     return result
 

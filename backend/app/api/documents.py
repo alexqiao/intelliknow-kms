@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db, Document, DocumentIntent
 from app.services.document_processor import DocumentProcessor
 from app.services.llm_service import QwenLLMService
-from app.services.vector_store import VectorStore
+from app.dependencies import vector_store_instance
 from app.config import get_settings
 import os
 import shutil
@@ -16,7 +16,6 @@ router = APIRouter()
 settings = get_settings()
 
 llm_service = QwenLLMService(settings.qwen_api_key)
-vector_store = VectorStore(dimension=1024)
 
 @router.post("/documents/upload")
 async def upload_document(file: UploadFile = File(...), intent_ids: str = "", db: Session = Depends(get_db)):
@@ -53,7 +52,7 @@ async def upload_document(file: UploadFile = File(...), intent_ids: str = "", db
             db.commit()
 
         logger.info(f"Starting document processing: doc_id={doc.id}")
-        processor = DocumentProcessor(llm_service, vector_store, db)
+        processor = DocumentProcessor(llm_service, vector_store_instance, db)
         chunk_count = await processor.process_document(file_path, doc.id)
         logger.info(f"Processing complete: {chunk_count} chunks")
 
@@ -82,7 +81,7 @@ async def delete_document(doc_id: int, db: Session = Depends(get_db)):
     if not doc:
         raise HTTPException(404, "Document not found")
 
-    vector_store.remove_document(doc_id)
+    vector_store_instance.remove_document(doc_id)
     db.delete(doc)
     db.commit()
     return {"ok": True}

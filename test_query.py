@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'backend'))
 
 async def test_query():
     from app.services.llm_service import QwenLLMService
-    from app.services.vector_store import VectorStore
+    from app.dependencies import vector_store_instance
     from app.services.orchestrator import QueryOrchestrator
     from app.database import SessionLocal
     from app.config import get_settings
@@ -15,10 +15,9 @@ async def test_query():
 
     settings = get_settings()
     llm = QwenLLMService(settings.qwen_api_key)
-    vector_store = VectorStore(dimension=1024)
     db = SessionLocal()
 
-    orchestrator = QueryOrchestrator(llm, vector_store, db)
+    orchestrator = QueryOrchestrator(llm, vector_store_instance, db)
 
     # 测试查询
     test_queries = [

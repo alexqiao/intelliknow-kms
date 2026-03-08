@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'backend'))
 
 async def test_upload():
     from app.services.llm_service import QwenLLMService
-    from app.services.vector_store import VectorStore
+    from app.dependencies import vector_store_instance
     from app.services.document_processor import DocumentProcessor
     from app.database import SessionLocal, init_db
     from app.config import get_settings
@@ -28,15 +28,6 @@ async def test_upload():
         print(f"✗ API 调用失败: {e}")
         return
 
-    # 测试向量存储
-    print("\n💾 测试向量存储...")
-    try:
-        vector_store = VectorStore(dimension=1024)
-        print(f"✓ 向量存储初始化成功")
-    except Exception as e:
-        print(f"✗ 向量存储失败: {e}")
-        return
-
     # 测试文档处理
     print("\n📄 测试文档处理...")
     test_file = "sample_docs/AKP.docx"
@@ -46,7 +37,7 @@ async def test_upload():
 
     try:
         db = SessionLocal()
-        processor = DocumentProcessor(llm, vector_store, db)
+        processor = DocumentProcessor(llm, vector_store_instance, db)
 
         # 模拟文档记录
         from app.database import Document
