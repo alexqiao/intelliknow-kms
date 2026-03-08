@@ -48,8 +48,41 @@ async def upload_document(file: UploadFile = File(...), intent_ids: str = "", db
 
         if intent_ids:
             for intent_id in intent_ids.split(','):
-                db.add(DocumentIntent(document_id=doc.id, intent_id=int(intent_id)))
+                existing = db.query(DocumentIntent).filter(
+                    DocumentIntent.document_id == doc.id,
+                    DocumentIntent.intent_id == int(intent_id)
+                ).first()
+                if not existing:
+                    db.add(DocumentIntent(document_id=doc.id, intent_id=int(intent_id)))
             db.commit()
+        else:
+            # Auto-classify document intent
+            from app.database import Intent
+            intents = db.query(Intent).all()
+            intent_list = "\n".join([f"- {i.name} (id={i.id}): {i.description}" for i in intents])
+
+            prompt = f"""Analyze the filename and determine which intent category this document belongs to:
+
+{intent_list}
+
+Filename: {file.filename}
+
+Respond with only the intent ID number (e.g., "2" for Legal)."""
+
+            try:
+                response = await llm_service.chat_completion([{"role": "user", "content": prompt}])
+                intent_id = int(response.strip())
+                existing = db.query(DocumentIntent).filter(
+                    DocumentIntent.document_id == doc.id,
+                    DocumentIntent.intent_id == intent_id
+                ).first()
+                if not existing:
+                    db.add(DocumentIntent(document_id=doc.id, intent_id=intent_id))
+                    db.commit()
+                    logger.info(f"Auto-classified to intent_id={intent_id}")
+            except Exception as e:
+                db.rollback()
+                logger.warning(f"Failed to auto-classify: {e}")
 
         logger.info(f"Starting document processing: doc_id={doc.id}")
         processor = DocumentProcessor(llm_service, vector_store_instance, db)

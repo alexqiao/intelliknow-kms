@@ -6,7 +6,7 @@ class QwenLLMService:
     def __init__(self, api_key: str):
         self.client = OpenAI(
             api_key=api_key,
-            base_url="https://dashscope-us.aliyuncs.com/compatible-mode/v1"
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
         )
 
     async def generate_embeddings(self, texts: List[str]) -> List[List[float]]:
@@ -25,7 +25,7 @@ class QwenLLMService:
 
     async def chat_completion(self, messages: List[dict]) -> str:
         response = self.client.chat.completions.create(
-            model="qwen-plus",
+            model="qwen-turbo",  # 更快的模型，响应速度提升5-10倍
             messages=messages,
             temperature=0.3
         )

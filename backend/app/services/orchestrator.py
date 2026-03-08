@@ -13,18 +13,28 @@ class QueryOrchestrator:
 
     async def process_query(self, query: str, source: str, user_id: str) -> Dict:
         start_time = time.time()
+        print(f"⏱️ Query started: {query[:50]}...")
 
+        t1 = time.time()
         (intent, confidence), query_embeddings = await asyncio.gather(
             self._classify_intent(query),
             self.llm.generate_embeddings([query])
         )
+        print(f"⏱️ Intent+Embedding: {(time.time()-t1)*1000:.0f}ms")
+
         if confidence < self.confidence_threshold:
             intent = "General"
 
+        t2 = time.time()
         chunks = await self._retrieve_chunks(query_embeddings[0], intent, top_k=5)
+        print(f"⏱️ Retrieval: {(time.time()-t2)*1000:.0f}ms")
+
+        t3 = time.time()
         response = await self._generate_response(query, chunks)
+        print(f"⏱️ RAG Generation: {(time.time()-t3)*1000:.0f}ms")
 
         response_time = int((time.time() - start_time) * 1000)
+        print(f"⏱️ Total: {response_time}ms")
         self._log_query(query, source, user_id, intent, confidence, response, response_time)
 
         return {
