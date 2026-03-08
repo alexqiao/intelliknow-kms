@@ -6,7 +6,7 @@ class QwenLLMService:
     def __init__(self, api_key: str):
         self.client = OpenAI(
             api_key=api_key,
-            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+            base_url="https://dashscope-us.aliyuncs.com/compatible-mode/v1"
         )
 
     async def generate_embeddings(self, texts: List[str]) -> List[List[float]]:
