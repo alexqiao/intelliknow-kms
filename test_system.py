@@ -46,10 +46,10 @@ def test_vector_store():
         from app.services.vector_store import VectorStore
         import numpy as np
 
-        vs = VectorStore(dimension=128)
+        vs = VectorStore(dimension=1024)
 
         # 测试添加向量
-        test_vectors = np.random.rand(3, 128).tolist()
+        test_vectors = np.random.rand(3, 1024).tolist()
         test_chunks = ["测试文本1", "测试文本2", "测试文本3"]
         ids = vs.add_vectors(test_vectors, test_chunks, doc_id=1)
 
@@ -57,7 +57,7 @@ def test_vector_store():
         print(f"  ✅ 添加了 {len(ids)} 个向量")
 
         # 测试搜索
-        query_vector = np.random.rand(128).tolist()
+        query_vector = np.random.rand(1024).tolist()
         results = vs.search(query_vector, top_k=2)
         print(f"  ✅ 搜索返回 {len(results)} 个结果")
 
