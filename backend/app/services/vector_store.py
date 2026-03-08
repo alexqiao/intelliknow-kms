@@ -28,8 +28,6 @@ class VectorStore:
         return ids
 
     def search(self, query_vector: List[float], top_k: int = 5, intent: str = None) -> List[Dict]:
-        self.load()
-
         if self.index.ntotal == 0:
             return []
 
@@ -42,6 +40,42 @@ class VectorStore:
                 results.append(self.metadata[idx])
 
         return results[:top_k]
+
+    def remove_document(self, doc_id: int):
+        """Remove all vectors associated with a document by rebuilding the index"""
+        if self.index.ntotal == 0:
+            return
+
+        # Filter metadata to keep only entries not matching doc_id
+        kept_metadata = [m for m in self.metadata if m["doc_id"] != doc_id]
+
+        if not kept_metadata:
+            # All vectors removed, reset index
+            self.index = faiss.IndexFlatL2(self.dimension)
+            self.metadata = []
+            self.save()
+            return
+
+        # Reconstruct vectors from old index
+        vectors = []
+        for m in kept_metadata:
+            vector = self.index.reconstruct(int(m["faiss_id"]))
+            vectors.append(vector)
+
+        # Create new index and add vectors
+        self.index = faiss.IndexFlatL2(self.dimension)
+        self.index.add(np.array(vectors).astype('float32'))
+
+        # Update metadata with new sequential faiss_ids
+        self.metadata = []
+        for i, m in enumerate(kept_metadata):
+            self.metadata.append({
+                "faiss_id": i,
+                "content": m["content"],
+                "doc_id": m["doc_id"]
+            })
+
+        self.save()
 
     def save(self):
         faiss.write_index(self.index, f"{self.index_path}/index.faiss")
