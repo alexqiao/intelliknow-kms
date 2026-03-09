@@ -1,8 +1,12 @@
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db
 from app.api import webhooks, documents, intents, query, config
-
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s"
+)
 app = FastAPI(title="IntelliKnow KMS")
 
 app.add_middleware(
