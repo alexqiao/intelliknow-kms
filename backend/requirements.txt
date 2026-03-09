@@ -18,3 +18,7 @@ slack-sdk==3.26.2
 
 python-dotenv==1.0.0
 aiofiles==23.2.1
+
+alibabacloud_docmind_api20220711
+alibabacloud_tea_openapi
+alibabacloud_tea_util

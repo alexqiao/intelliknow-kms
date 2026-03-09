@@ -1,6 +1,5 @@
 from openai import OpenAI
 from typing import List
-import os
 
 class QwenLLMService:
     def __init__(self, api_key: str):

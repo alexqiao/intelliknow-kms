@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     telegram_bot_token: str = ""
     slack_bot_token: str = ""
     slack_signing_secret: str = ""
+    aliyun_access_key_id: str = ""
+    aliyun_access_key_secret: str = ""
 
     class Config:
         env_file = os.path.join(os.path.dirname(__file__), "..", ".env")
