@@ -5,7 +5,7 @@ import os
 from typing import List, Dict
 
 class VectorStore:
-    def __init__(self, dimension: int = 1536):
+    def __init__(self, dimension: int):
         self.dimension = dimension
         self.index = faiss.IndexFlatL2(dimension)
         self.metadata = []

@@ -4,6 +4,8 @@ import os
 
 class Settings(BaseSettings):
     qwen_api_key: str = ""
+    gemini_api_key: str = ""
+    llm_provider: str = "qwen"
     database_url: str = "sqlite:///./data/intelliknow.db"
     telegram_bot_token: str = ""
     slack_bot_token: str = ""

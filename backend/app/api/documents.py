@@ -2,8 +2,7 @@ from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db, Document, DocumentIntent
 from app.services.document_processor import DocumentProcessor
-from app.services.llm_service import QwenLLMService
-from app.dependencies import vector_store_instance
+from app.dependencies import vector_store_instance, llm_service_instance
 from app.config import get_settings
 import os
 import shutil
@@ -14,8 +13,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 settings = get_settings()
-
-llm_service = QwenLLMService(settings.qwen_api_key)
 
 @router.post("/documents/upload")
 async def upload_document(file: UploadFile = File(...), intent_ids: str = "", db: Session = Depends(get_db)):
@@ -70,7 +67,7 @@ Filename: {file.filename}
 Respond with only the intent ID number (e.g., "2" for Legal)."""
 
             try:
-                response = await llm_service.chat_completion([{"role": "user", "content": prompt}])
+                response = await llm_service_instance.chat_completion([{"role": "user", "content": prompt}])
                 intent_id = int(response.strip())
                 existing = db.query(DocumentIntent).filter(
                     DocumentIntent.document_id == doc.id,
@@ -85,7 +82,7 @@ Respond with only the intent ID number (e.g., "2" for Legal)."""
                 logger.warning(f"Failed to auto-classify: {e}")
 
         logger.info(f"Starting document processing: doc_id={doc.id}")
-        processor = DocumentProcessor(llm_service, vector_store_instance, db)
+        processor = DocumentProcessor(llm_service_instance, vector_store_instance, db)
         chunk_count = await processor.process_document(file_path, doc.id)
         logger.info(f"Processing complete: {chunk_count} chunks")
 

@@ -4,8 +4,7 @@ from app.database import get_db, FrontendConfig
 from app.services.orchestrator import QueryOrchestrator
 from app.services.telegram_client import TelegramClient
 from app.services.slack_client import SlackClient
-from app.services.llm_service import QwenLLMService
-from app.dependencies import vector_store_instance
+from app.dependencies import vector_store_instance, llm_service_instance
 from app.config import get_settings
 from app.utils.formatters import format_for_telegram, format_for_slack
 from app.utils.security import sanitize_input
@@ -13,8 +12,6 @@ import json
 
 router = APIRouter()
 settings = get_settings()
-
-llm_service = QwenLLMService(settings.qwen_api_key)
 
 @router.post("/webhook/telegram")
 async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
@@ -32,7 +29,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             return {"ok": True}
 
         print(f"💬 Processing query: {text}")
-        orchestrator = QueryOrchestrator(llm_service, vector_store_instance, db)
+        orchestrator = QueryOrchestrator(llm_service_instance, vector_store_instance, db)
         result = await orchestrator.process_query(text, "telegram", user_id)
 
         print(f"✅ Response generated: {result['response'][:50]}...")
@@ -69,7 +66,7 @@ async def slack_webhook(request: Request, db: Session = Depends(get_db)):
         text = sanitize_input(event.get("text", ""))
         user_id = event.get("user")
 
-        orchestrator = QueryOrchestrator(llm_service, vector_store_instance, db)
+        orchestrator = QueryOrchestrator(llm_service_instance, vector_store_instance, db)
         result = await orchestrator.process_query(text, "slack", user_id)
 
         # Get token from database
