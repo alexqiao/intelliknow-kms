@@ -117,18 +117,18 @@ Respond in JSON format:
 
     async def _generate_response(self, query: str, chunks: List[Dict]) -> str:
         if not chunks:
-            return "知识库中没有相关信息。"
+            return "No relevant information found in the knowledge base."
 
-        context = "\n\n".join([f"[来源: {c['doc_name']}]\n{c['content']}" for c in chunks])
+        context = "\n\n".join([f"[Source: {c['doc_name']}]\n{c['content']}" for c in chunks])
 
-        prompt = f"""基于以下知识库内容回答用户问题。如果内容中没有相关信息，请说"知识库中没有相关信息"。
+        prompt = f"""Answer the user's question based on the following knowledge base content. If the content does not contain relevant information, respond with "No relevant information found in the knowledge base."
 
-知识库内容：
+Knowledge Base Content:
 {context}
 
-用户问题：{query}
+User Question: {query}
 
-请提供简洁准确的回答，并标注信息来源。"""
+Provide a concise and accurate answer, citing the source of information."""
 
         return await self.llm.chat_completion([{"role": "user", "content": prompt}])
 

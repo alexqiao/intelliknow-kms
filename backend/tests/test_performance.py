@@ -15,23 +15,18 @@ async def mock_chat_completion(messages):
     return "This is a mocked RAG response."
 
 async def test_performance():
-    from app.services.llm_service import QwenLLMService
-    from app.dependencies import vector_store_instance
+    from app.dependencies import vector_store_instance, llm_service_instance
     from app.services.orchestrator import QueryOrchestrator
     from app.database import SessionLocal
-    from app.config import get_settings
 
     print("🧪 性能测试\n")
-    settings = get_settings()
 
-    with patch.object(QwenLLMService, 'generate_embeddings', new_callable=AsyncMock) as mock_embeddings, \
-         patch.object(QwenLLMService, 'chat_completion', new_callable=AsyncMock) as mock_chat:
+    with patch.object(type(llm_service_instance), 'generate_embeddings', new_callable=AsyncMock) as mock_embeddings, \
+         patch.object(type(llm_service_instance), 'chat_completion', new_callable=AsyncMock) as mock_chat:
 
         # Configure mocks
         mock_embeddings.return_value = [[0.1] * 1024]
         mock_chat.side_effect = mock_chat_completion
-
-        llm = QwenLLMService(settings.qwen_api_key)
 
         # 测试并发查询
         print("1️⃣ 测试并发查询（5个）...")
@@ -51,7 +46,7 @@ async def test_performance():
             for q in queries:
                 db = SessionLocal()
                 db_sessions.append(db)
-                orchestrator = QueryOrchestrator(llm, vector_store_instance, db)
+                orchestrator = QueryOrchestrator(llm_service_instance, vector_store_instance, db)
                 tasks.append(orchestrator.process_query(q, "test", "user1"))
 
             results = await asyncio.gather(*tasks)
