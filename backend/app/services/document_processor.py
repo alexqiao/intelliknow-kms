@@ -121,6 +121,10 @@ class DocumentProcessor:
             logger.info(f"Attempting Aliyun Document Mind extraction for {file_path}")
             text = await self._extract_with_aliyun(file_path)
             logger.info("Aliyun extraction succeeded")
+            # Log a preview of the extracted text (first 500 characters) to verify Markdown structure
+            logger.info(f"Extracted text length: {len(text)} characters")
+            preview_text = text[:500].replace('\n', ' \\n ')  # Escape newlines for cleaner single-line or block logging
+            logger.info(f"Content Preview: {preview_text} ...")
         except Exception as e:
             logger.warning(f"Aliyun extraction failed: {e}. Falling back to local extraction")
             text = self._extract_text(file_path)
