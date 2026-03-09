@@ -11,9 +11,11 @@ IntelliKnow KMS is a Gen AI-powered Knowledge Management System designed to addr
 The central component that coordinates the entire query processing pipeline:
 
 1. **Intent Classification**: Uses Qwen LLM to classify user queries into predefined categories (HR, Legal, Finance, General) with a configurable confidence threshold (default: 70%)
-2. **Document Retrieval**: Performs semantic search via FAISS, filtered by classified intent
+2. **Document Retrieval**: Performs semantic search via FAISS, filtered by classified intent. Uses doc_id directly from FAISS metadata to prevent ID desync issues after document deletion.
 3. **Response Generation**: Uses RAG (Retrieval-Augmented Generation) to generate cited responses
 4. **Fallback Mechanism**: If intent-specific search yields no results, falls back to global search
+
+**Critical Fix**: Retrieval now bypasses DocumentChunk table and uses doc_id from FAISS metadata directly, preventing FAISS ID desync after document deletion and re-indexing.
 
 ### 2. Document Processor (`backend/app/services/document_processor.py`)
 
@@ -52,12 +54,12 @@ FAISS-based vector storage with **dynamic dimension support**:
 - Base URL: https://dashscope.aliyuncs.com/compatible-mode/v1
 
 **Gemini Provider** (Render Deployment in US):
-- Chat: gemini-2.5-flash model
+- Chat: gemini-2.5-flash-lite model
 - Embeddings: gemini-embedding-001 (3072 dimensions)
 - Base URL: https://generativelanguage.googleapis.com/v1beta/openai/
 - **Purpose**: Mitigates cross-ocean latency (reduces response time from >4000ms to <2000ms)
 
-Both providers use OpenAI-compatible interfaces for seamless switching via `LLM_PROVIDER` environment variable.
+Both providers use **AsyncOpenAI** client for non-blocking event loop execution, enabling true concurrent processing with FastAPI's async capabilities.
 
 ### 5. Frontend Integrations
 
@@ -114,7 +116,7 @@ frontend_configs (id, platform, enabled, credentials, status, created_at)
 | POST | `/api/query` | Direct query API |
 | POST | `/api/documents/upload` | Upload document (PDF/DOCX) |
 | GET | `/api/documents` | List all documents |
-| DELETE | `/api/documents/{id}` | Delete document |
+| DELETE | `/api/documents/{id}` | Delete document (with orphan cleanup) |
 | GET | `/api/intents` | List all intents |
 | POST | `/api/intents` | Create intent |
 | PUT | `/api/intents/{id}` | Update intent |
@@ -169,3 +171,11 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment and configuration ins
 - Credential masking in dashboard (last 4 digits only)
 - Database-backed credential storage
 - No hardcoded secrets in code
+
+## Data Integrity
+
+**Critical Fixes Implemented:**
+
+1. **FAISS ID Desync Prevention**: The orchestrator now retrieves documents using `doc_id` directly from FAISS metadata instead of joining via `faiss_id` from DocumentChunk table. This prevents ID mismatches after document deletion triggers FAISS re-indexing.
+
+2. **Orphan Data Cleanup**: Document deletion endpoint now explicitly deletes associated DocumentChunk and DocumentIntent records before removing the Document record, preventing orphaned data in the database.

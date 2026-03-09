@@ -15,7 +15,7 @@ A production-ready KMS that addresses enterprise pain points: fragmented informa
 - 📚 **Smart Document Processing**: PDF and DOCX support with AI-powered parsing
 - 🎯 **Intent Classification**: Automatic categorization (HR, Legal, Finance, General)
 - 🔍 **Semantic Search**: FAISS vector database for accurate retrieval
-- 🧠 **Qwen LLM Integration**: Embeddings and RAG-based response generation
+- 🧠 **Dual LLM Support**: Environment-aware switching (Qwen for local dev, Gemini for production)
 - 📊 **Admin Dashboard**: Streamlit-based management interface
 - 📈 **Analytics**: Query tracking, classification accuracy, document access stats
 - ⚡ **Fast Response**: <3 second end-to-end latency
@@ -70,10 +70,12 @@ A production-ready KMS that addresses enterprise pain points: fragmented informa
     └────┬────┘ └──────────┘
          │
          ▼
-    ┌──────────┐
-    │ Qwen API │
-    │ (通义千问)│
-    └──────────┘
+    ┌──────────────────────┐
+    │   LLM Service        │
+    │ (Environment-Aware)  │
+    │ Qwen (local dev)     │
+    │ Gemini (production)  │
+    └──────────────────────┘
 ```
 
 ---
@@ -83,7 +85,8 @@ A production-ready KMS that addresses enterprise pain points: fragmented informa
 ### Prerequisites
 
 - Python 3.11+
-- Qwen API key from [DashScope](https://dashscope.aliyun.com/)
+- Qwen API key from [DashScope](https://dashscope.aliyun.com/) (for local development)
+- Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey) (for production deployment)
 - (Optional) Telegram Bot Token
 - (Optional) Slack App credentials
 
@@ -136,8 +139,14 @@ Dashboard will be available at `http://localhost:8501`
 Create `backend/.env` file with the following:
 
 ```bash
-# Required: Qwen API (通义千问)
+# LLM Provider Configuration
+LLM_PROVIDER=qwen                    # Use 'qwen' for local dev, 'gemini' for production
 QWEN_API_KEY=sk-your-qwen-api-key-here
+GEMINI_API_KEY=your-gemini-api-key-here
+
+# Aliyun Document Mind API (for advanced document parsing)
+ALIYUN_ACCESS_KEY_ID=your-aliyun-access-key-id
+ALIYUN_ACCESS_KEY_SECRET=your-aliyun-access-key-secret
 
 # Optional: Telegram Bot (if using Telegram integration)
 TELEGRAM_BOT_TOKEN=your-telegram-bot-token
@@ -153,7 +162,7 @@ DATABASE_URL=sqlite:///./data/intelliknow.db
 
 ### Getting API Keys
 
-#### 1. Qwen API Key (Required)
+#### 1. Qwen API Key (For Local Development)
 
 1. Visit [DashScope](https://dashscope.aliyun.com/)
 2. Register/login with Aliyun account
@@ -162,6 +171,15 @@ DATABASE_URL=sqlite:///./data/intelliknow.db
 5. Copy the key (starts with `sk-`)
 
 **Free Tier**: 1M tokens/month for development
+
+#### 2. Gemini API Key (For Production Deployment)
+
+1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Sign in with Google account
+3. Click "Create API Key"
+4. Copy the generated key
+
+**Free Tier**: Generous quota for testing and small-scale production
 
 ---
 
@@ -325,9 +343,9 @@ Bot: According to the HR Policy document, employees receive:
 | Backend API | FastAPI | REST API and webhook handlers |
 | Database | SQLite | Metadata storage |
 | Vector Store | FAISS | Semantic search |
-| LLM | Qwen API (通义千问) | Embeddings & response generation |
+| LLM | Qwen API (local) / Gemini API (production) | Embeddings & response generation |
+| Document Parsing | Aliyun Document Mind API + PyPDF2/python-docx | Text extraction with fallback |
 | Admin UI | Streamlit | Management dashboard |
-| Document Parsing | PyPDF2, python-docx | Text extraction |
 | Telegram | python-telegram-bot | Bot integration |
 | Slack | slack-sdk | Bot integration |
 
