@@ -51,11 +51,13 @@ class QueryOrchestrator:
         prompt = f"""Classify the following user query into one of these intent categories:
 
 {intent_list}
+- General: Use this for greetings (e.g., 'hello', 'hi'), chitchat, or any query that does not clearly fit into the specific categories above.
 
 User query: "{query}"
 
-Respond in JSON format:
-{{"intent": "category_name", "confidence": 0.85}}"""
+CRITICAL INSTRUCTION: You MUST respond with ONLY a valid, raw JSON object. Do not include ANY conversational text, explanations, or markdown code blocks (like ```json).
+Expected strict format:
+{{"intent": "Category_Name", "confidence": 0.99}}"""
 
         response = await self.llm.chat_completion([{"role": "user", "content": prompt}])
 
