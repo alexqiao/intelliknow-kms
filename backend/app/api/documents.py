@@ -107,9 +107,15 @@ async def list_documents(db: Session = Depends(get_db)):
 
 @router.delete("/documents/{doc_id}")
 async def delete_document(doc_id: int, db: Session = Depends(get_db)):
+    from app.database import DocumentChunk, DocumentIntent
+
     doc = db.query(Document).filter(Document.id == doc_id).first()
     if not doc:
         raise HTTPException(404, "Document not found")
+
+    # Clean up orphaned chunks and intents FIRST
+    db.query(DocumentChunk).filter(DocumentChunk.document_id == doc_id).delete()
+    db.query(DocumentIntent).filter(DocumentIntent.document_id == doc_id).delete()
 
     vector_store_instance.remove_document(doc_id)
     db.delete(doc)

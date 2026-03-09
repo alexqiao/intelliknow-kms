@@ -78,30 +78,30 @@ Expected strict format:
         enriched = []
         accessed_docs = set()
         for r in results:
-            chunk = self.db.query(DocumentChunk).filter(DocumentChunk.faiss_id == r["faiss_id"]).first()
-            if chunk:
-                doc = self.db.query(Document).filter(Document.id == chunk.document_id).first()
+            # Bypass chunk query and get doc directly from metadata
+            doc = self.db.query(Document).filter(Document.id == r["doc_id"]).first()
 
+            if doc:
                 # Filter by intent
                 if intent == "General" or not intent_obj:
                     enriched.append({
                         "content": r["content"],
-                        "doc_name": doc.filename if doc else "Unknown"
+                        "doc_name": doc.filename
                     })
-                    if doc and doc.id not in accessed_docs:
+                    if doc.id not in accessed_docs:
                         doc.access_count += 1
                         accessed_docs.add(doc.id)
                 else:
                     doc_intent = self.db.query(DocumentIntent).filter(
-                        DocumentIntent.document_id == chunk.document_id,
+                        DocumentIntent.document_id == doc.id,
                         DocumentIntent.intent_id == intent_obj.id
                     ).first()
                     if doc_intent:
                         enriched.append({
                             "content": r["content"],
-                            "doc_name": doc.filename if doc else "Unknown"
+                            "doc_name": doc.filename
                         })
-                        if doc and doc.id not in accessed_docs:
+                        if doc.id not in accessed_docs:
                             doc.access_count += 1
                             accessed_docs.add(doc.id)
 
