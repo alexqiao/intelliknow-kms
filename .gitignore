@@ -32,3 +32,4 @@ backend/data/faiss_index/*
 # Temp files
 ~$*
 repomix-output.xml
+CLAUDE.md
