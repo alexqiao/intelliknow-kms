@@ -66,6 +66,26 @@ Both providers use **AsyncOpenAI** client for non-blocking event loop execution,
 - **Telegram** (`backend/app/services/telegram_client.py`): Webhook-based message handling
 - **Slack** (`backend/app/services/slack_client.py`): Event subscription with signature verification
 
+### Slack Integration Troubleshooting
+
+**Issue 1: Cannot send messages to the bot**
+
+If the UI shows "Sending messages to this app has been turned off":
+- Go to Slack API Dashboard (api.slack.com/apps) and select your app
+- Navigate to "App Home" under "Features"
+- Scroll to "Show Tabs" section
+- Enable the "Messages Tab" toggle
+- **Critical**: Check "Allow users to send Slash commands and messages from the messages tab"
+- Refresh Slack client - message input will unlock immediately
+
+**Issue 2: Finding the Admin Channel ID**
+
+To get the Channel ID for dashboard configuration:
+- Log into Slack web version in a browser
+- Navigate to the channel or DM with the bot
+- Check the URL bar (e.g., `app.slack.com/client/T1234567/C987654321`)
+- The final string starting with 'C' (channels) or 'U' (user DMs) is your Channel ID
+
 ### 6. Admin Dashboard (`dashboard/`)
 
 Streamlit multi-page app with 5 screens:
