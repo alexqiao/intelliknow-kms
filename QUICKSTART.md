@@ -20,12 +20,28 @@ cd backend
 cp .env.example .env
 ```
 
-编辑 `.env` 文件，添加你的 Qwen API 密钥：
-```
-QWEN_API_KEY=your_actual_api_key_here
+编辑 `.env` 文件，添加必需的 API 密钥：
+
+```bash
+# LLM Provider Configuration
+LLM_PROVIDER=qwen                    # 本地开发用 qwen，Render 部署用 gemini
+QWEN_API_KEY=your_qwen_api_key       # 通义千问 API 密钥
+GEMINI_API_KEY=your_gemini_api_key   # Gemini API 密钥
+
+# Aliyun Document Mind API (文档解析)
+ALIYUN_ACCESS_KEY_ID=your_aliyun_access_key_id
+ALIYUN_ACCESS_KEY_SECRET=your_aliyun_access_key_secret
+
+# Frontend Integration (可选)
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+SLACK_BOT_TOKEN=your_slack_bot_token
+SLACK_SIGNING_SECRET=your_slack_signing_secret
 ```
 
-获取 API 密钥：https://dashscope.aliyun.com/
+**获取 API 密钥：**
+- Qwen API: https://dashscope.aliyun.com/
+- Gemini API: https://aistudio.google.com/app/apikey
+- Aliyun Document Mind: https://www.aliyun.com/product/ai/documentmind
 
 ### 2. 启动后端服务
 
@@ -89,8 +105,9 @@ intelliknow-kms/
 - 运行测试脚本会自动创建
 
 **问题：FAISS 索引错误**
-- 检查向量维度是否匹配（默认 1536）
-- 删除 `data/faiss_index/` 重新初始化
+- 检查向量维度是否匹配（Qwen 为 1024，Gemini 为 3072）
+- 切换 LLM_PROVIDER 后需删除 `data/faiss_index/` 并重新上传文档
+- 运行 `python rebuild_faiss.py` 重建索引
 
 **问题：API 连接失败**
 - 确认 Qwen API 密钥正确
