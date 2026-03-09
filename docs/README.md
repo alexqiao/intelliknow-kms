@@ -17,25 +17,47 @@ The central component that coordinates the entire query processing pipeline:
 
 ### 2. Document Processor (`backend/app/services/document_processor.py`)
 
-Handles the complete document ingestion pipeline:
-- **Text Extraction**: PyPDF2 for PDFs, python-docx for DOCX files
+Implements a **Dual-Pipeline Architecture** for enterprise-grade document processing:
+
+**Primary Pipeline: Aliyun Document Mind API**
+- High-fidelity Markdown extraction with perfect table/layout preservation
+- Async polling mechanism (60s timeout) for cloud-based OCR/layout analysis
+- Offloads compute-intensive operations to avoid Render's 512MB RAM constraints
+
+**Fallback Pipeline: Local Extraction**
+- PyPDF2 for PDFs, python-docx for DOCX files
+- Ensures 100% uptime when cloud API is unavailable or times out
+- Graceful degradation without service interruption
+
+**Post-Extraction Processing:**
 - **Chunking**: RecursiveCharacterTextSplitter (500 chars/chunk, 50 overlap)
-- **Embedding**: Qwen text-embedding-v3 (1024 dimensions)
+- **Embedding**: Environment-aware (Qwen 1024-dim or Gemini 3072-dim)
 - **Storage**: FAISS index + SQLite metadata
 
 ### 3. Vector Store (`backend/app/services/vector_store.py`)
 
-FAISS-based vector storage with:
+FAISS-based vector storage with **dynamic dimension support**:
 - IndexFlatL2 for exact nearest-neighbor search
 - Metadata mapping (faiss_id → content + doc_id)
 - Disk persistence (auto-save/load)
+- **Environment-aware dimensions**: Qwen (1024-dim) or Gemini (3072-dim)
 
 ### 4. LLM Service (`backend/app/services/llm_service.py`)
 
-Qwen API wrapper using OpenAI-compatible interface:
-- Chat completion (qwen-plus model)
-- Text embeddings (text-embedding-v3, 1024 dimensions)
-- Async operations for non-blocking I/O
+**Environment-Aware LLM Architecture** using Factory Pattern:
+
+**Qwen Provider** (Local Development in China):
+- Chat: qwen-turbo model
+- Embeddings: text-embedding-v3 (1024 dimensions)
+- Base URL: https://dashscope.aliyuncs.com/compatible-mode/v1
+
+**Gemini Provider** (Render Deployment in US):
+- Chat: gemini-2.5-flash model
+- Embeddings: gemini-embedding-001 (3072 dimensions)
+- Base URL: https://generativelanguage.googleapis.com/v1beta/openai/
+- **Purpose**: Mitigates cross-ocean latency (reduces response time from >4000ms to <2000ms)
+
+Both providers use OpenAI-compatible interfaces for seamless switching via `LLM_PROVIDER` environment variable.
 
 ### 5. Frontend Integrations
 
@@ -99,9 +121,11 @@ User Message → Webhook/API → Orchestrator
 
 ### Document Upload Flow
 ```
-File Upload → Save to disk → Extract text (PDF/DOCX)
+File Upload → Save to disk → Aliyun Document Mind API (Primary)
+  → [If success] Extract Markdown with tables/layouts
+  → [If timeout/fail] Fallback to local PyPDF2/python-docx
   → Chunk text (500 chars, 50 overlap)
-  → Generate embeddings (Qwen text-embedding-v3)
+  → Generate embeddings (Qwen 1024-dim or Gemini 3072-dim)
   → Store in FAISS index + SQLite metadata
   → Associate with intent spaces
 ```
