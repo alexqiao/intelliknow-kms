@@ -30,7 +30,7 @@ class QueryOrchestrator:
         print(f"⏱️ Retrieval: {(time.time()-t2)*1000:.0f}ms")
 
         t3 = time.time()
-        response = await self._generate_response(query, chunks)
+        response = await self._generate_response(query, chunks, source)
         print(f"⏱️ RAG Generation: {(time.time()-t3)*1000:.0f}ms")
 
         response_time = int((time.time() - start_time) * 1000)
@@ -117,20 +117,31 @@ Expected strict format:
 
         return enriched[:top_k]
 
-    async def _generate_response(self, query: str, chunks: List[Dict]) -> str:
+    async def _generate_response(self, query: str, chunks: List[Dict], source: str) -> str:
         if not chunks:
             return "No relevant information found in the knowledge base."
 
         context = "\n\n".join([f"[Source: {c['doc_name']}]\n{c['content']}" for c in chunks])
 
-        prompt = f"""Answer the user's question based on the following knowledge base content. If the content does not contain relevant information, respond with "No relevant information found in the knowledge base."
+        prompt = f"""You are an enterprise Knowledge Management System (KMS) assistant. Your strictly enforced task is to answer queries based ONLY on the provided context.
 
-Knowledge Base Content:
+### PLATFORM ADAPTATION RULE (Current Source: {source}) ###
+You MUST adapt your response format for the '{source}' platform and be EXTREMELY concise. The entire response MUST NOT exceed 100 words.
+- If source is 'telegram' or 'wechat': Provide a direct answer in 1-2 short sentences. Do NOT use any markdown formatting (no asterisks, no underscores).
+- If source is 'slack' or 'teams': Provide a direct answer. Use Slack-specific markdown: use single asterisks for bolding (e.g., *important*). DO NOT use double asterisks (**). Keep it strictly under 100 words.
+- If source is 'web' or 'batch_evaluation': Provide a concise, well-structured standard markdown response, under 100 words.
+
+### KNOWLEDGE BASE CONTEXT ###
 {context}
 
-User Question: {query}
+### USER QUERY ###
+"{query}"
 
-Provide a concise and accurate answer, citing the source of information."""
+### CRITICAL INSTRUCTIONS ###
+1. GREETING CHECK: If the User Query is a greeting (e.g., "hello"), reply ONLY with: "Hello! I am the IntelliKnow KMS. Please ask me about HR, Legal, or Finance policies."
+2. CONTEXT CHECK: If the answer is NOT explicitly found in the context, reply EXACTLY with: "No relevant information found in the knowledge base."
+3. CITE SOURCES: If you answer the question, cite the source document name (e.g., "[Legal_Document.docx]") at the very end.
+"""
 
         return await self.llm.chat_completion([{"role": "user", "content": prompt}])
 

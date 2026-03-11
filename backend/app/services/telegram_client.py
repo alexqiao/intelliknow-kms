@@ -8,4 +8,4 @@ class TelegramClient:
         await self.bot.set_webhook(url=f"{webhook_url}/webhook/telegram")
 
     async def send_message(self, chat_id: int, text: str):
-        await self.bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
+        await self.bot.send_message(chat_id=chat_id, text=text)
