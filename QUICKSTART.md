@@ -7,6 +7,7 @@
 ## 测试结果
 
 ✅ 所有核心模块测试通过：
+
 - 数据库初始化成功（3个默认意图：HR、Legal、Finance）
 - 向量存储功能正常
 - 模块导入无错误
@@ -39,6 +40,7 @@ SLACK_SIGNING_SECRET=your_slack_signing_secret
 ```
 
 **获取 API 密钥：**
+
 - Qwen API: https://dashscope.aliyun.com/
 - Gemini API: https://aistudio.google.com/app/apikey
 - Aliyun Document Mind: https://www.aliyun.com/product/ai/documentmind
@@ -67,17 +69,21 @@ streamlit run app.py
 ## 功能测试
 
 ### 上传文档
+
 1. 打开管理后台 → Knowledge Base
 2. 上传 PDF 或 DOCX 文件
 3. 选择关联的意图类别
 
 ### 配置 Bot
+
 1. Frontend Integration 页面
 2. 配置 Telegram 或 Slack 凭证
 3. 设置 webhook URL
 
 ### 查询测试
+
 使用 API 直接测试：
+
 ```bash
 curl -X POST http://localhost:8000/api/query \
   -H "Content-Type: application/json" \
@@ -101,16 +107,19 @@ intelliknow-kms/
 ## 故障排查
 
 **问题：数据库文件未找到**
+
 - 确保 `backend/data/` 目录存在
 - 运行测试脚本会自动创建
 
 **问题：FAISS 索引错误**
+
 - 检查向量维度是否匹配（Qwen 为 1024，Gemini 为 3072）
 - 切换 LLM_PROVIDER 后需删除 `data/faiss_index/` 并重新上传文档
 - 运行 `python rebuild_faiss.py` 重建索引
 
 **问题：API 连接失败**
-- 确认 Qwen API 密钥正确
+
+- 确认API 密钥正确
 - 检查网络连接
 
 ## 开发建议
