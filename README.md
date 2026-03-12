@@ -40,7 +40,7 @@ A production-ready KMS that addresses enterprise pain points: fragmented informa
 
 ## 🏗️ Architecture
 
-![ArchitectureMap.png](/Users/alexsqiao/Documents/github/aia/intelliknow-kms/docs/ArchitectureMap.png)
+![ArchitectureMap.png](docs/ArchitectureMap.png)
 
 ---
 
