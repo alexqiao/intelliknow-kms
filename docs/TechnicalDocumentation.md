@@ -6,7 +6,7 @@ IntelliKnow KMS is a Gen AI-powered Knowledge Management System designed to addr
 
 
 
-![ArchitectureMap.png](docs/ArchitectureMap.png)
+![ArchitectureMap.png](ArchitectureMap.png)
 
 ## Core Modules
 
