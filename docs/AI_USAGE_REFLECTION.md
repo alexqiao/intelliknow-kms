@@ -30,11 +30,17 @@ This 7-day case study project built a Gen AI-powered Knowledge Management System
 
 Beyond the core functional requirements, AI and architectural decisions were heavily utilized to iterate faster and overcome severe deployment bottlenecks:
 
-### 1. Eliminating "Event Loop Blocking" via AsyncOpenAI
+### 1. Overcoming Severe Deployment Latency: A Three-Pronged Optimization Strategy
 
-* **Issue:** Initial end-to-end latency on the Render deployment spiked to >7 seconds. Profiling revealed that synchronous OpenAI clients were blocking FastAPI's single-core event loop, causing the Intent Classification and Vector Embedding steps to execute sequentially.
-* **Iteration:** I refactored the entire LLM service layer using the Factory Pattern and `AsyncOpenAI`. By utilizing `asyncio.gather()`, I achieved true non-blocking concurrent I/O.
-* **Result:** Slashed the "Intent + Embedding" phase latency from ~7.5s to under 1.5s.
+* **Issue:** While local testing demonstrated snappy end-to-end response times of under 2 seconds, deploying the MVP to Render's US-based server caused the latency to drastically spike to over 7 seconds. 
+* **Iteration & Root Cause Analysis:** Through distributed tracing and systematic debugging, I identified three distinct bottlenecks and resolved them sequentially:
+  1. **Event Loop Blocking (I/O Bottleneck):** Profiling revealed that the synchronous OpenAI client was locking FastAPI's single-core event loop. The Intent Classification and Vector Embedding requests were executing sequentially rather than concurrently.
+     * *Fix:* Refactored the LLM service layer to use `AsyncOpenAI`, ensuring strict `await` boundaries for all I/O operations. This allowed `asyncio.gather()` to achieve true, non-blocking concurrency.
+  2. **Cross-Ocean API Latency (Network Bottleneck):** The Qwen API (hosted in China) experienced severe transatlantic latency when pinged from the Render server (hosted in the US).
+     * *Fix:* Designed an **Environment-Aware LLM Architecture**. The system uses the Factory Pattern to dynamically route to Qwen for local development in China, while seamlessly switching to Google's Gemini API for the US-based Render deployment, entirely eliminating the geographic network penalty.
+  3. **Serverless Cold Starts (Infrastructure Bottleneck):** After the code optimizations brought the latency down to ~2s, subsequent testing revealed that the Render instance would hibernate after periods of inactivity. The resulting "cold start" would ruin the response time of the first query (often >10s).
+     * *Fix:* Implemented a lightweight `/health` endpoint supporting `HEAD` methods and integrated **UptimeRobot** to ping the service every 5 minutes. This keeps the TCP connection pool warm and completely bypasses the serverless cold-start penalty.
+* **Result:** The combination of true async I/O, geographic API routing, and keep-alive polling slashed the production end-to-end latency from ~7.5s down to a highly stable **~1s - 2.0s**. The system now consistently meets the strict <3s SLA requirements regardless of traffic frequency.
 
 ### 2. Curing "LLM Verbosity" and "Persona Hijacking"
 
