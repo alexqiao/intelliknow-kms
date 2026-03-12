@@ -25,11 +25,13 @@ A production-ready KMS that addresses enterprise pain points: fragmented informa
 ## 🎯 Problem Statement
 
 **Enterprise Challenge**: Organizations struggle with:
+
 1. Knowledge scattered across multiple documents and systems
 2. Employees wasting time searching for information
 3. Communication tools (Telegram, Slack) disconnected from knowledge bases
 
 **Solution**: IntelliKnow KMS provides:
+
 - Unified knowledge base built from uploaded documents
 - Direct access via existing communication tools
 - AI-powered intent routing for accurate, context-aware responses
@@ -38,45 +40,7 @@ A production-ready KMS that addresses enterprise pain points: fragmented informa
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────────────────────────────┐
-│   Frontend Layer (User Interface)       │
-│   ┌──────────┐      ┌──────────┐       │
-│   │ Telegram │      │  Slack   │       │
-│   │   Bot    │      │   Bot    │       │
-│   └────┬─────┘      └────┬─────┘       │
-└────────┼──────────────────┼─────────────┘
-         │                  │
-         └────────┬─────────┘
-                  ▼
-┌─────────────────────────────────────────┐
-│      API Gateway (FastAPI Backend)      │
-│  /webhook/telegram  /webhook/slack      │
-│  /api/query  /api/documents  /api/intents│
-└────────┬────────────────────────────────┘
-         │
-    ┌────┴────┬────────┬────────┐
-    ▼         ▼        ▼        ▼
-┌────────┐ ┌──────┐ ┌──────┐ ┌──────┐
-│ Query  │ │ Doc  │ │Intent│ │Admin │
-│Orchestr│ │Proces│ │Class │ │ UI   │
-└───┬────┘ └──┬───┘ └──┬───┘ └──────┘
-    │         │        │
-    └────┬────┴────┬───┘
-         ▼         ▼
-    ┌─────────┐ ┌──────────┐
-    │  FAISS  │ │  SQLite  │
-    │ Vectors │ │ Metadata │
-    └────┬────┘ └──────────┘
-         │
-         ▼
-    ┌──────────────────────┐
-    │   LLM Service        │
-    │ (Environment-Aware)  │
-    │ Qwen (local dev)     │
-    │ Gemini (production)  │
-    └──────────────────────┘
-```
+![ArchitectureMap.png](docs/ArchitectureMap.png)
 
 ---
 
@@ -87,6 +51,7 @@ A production-ready KMS that addresses enterprise pain points: fragmented informa
 - Python 3.11+
 - Qwen API key from [DashScope](https://dashscope.aliyun.com/) (for local development)
 - Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey) (for production deployment)
+- Aliyun Access Key ID & Secret (Required for cloud-based Document Mind parsing)
 - (Optional) Telegram Bot Token
 - (Optional) Slack App credentials
 
@@ -110,6 +75,8 @@ cp .env.example .env
 # Initialize database and default intents
 cd ..
 python init_intents.py
+python migrate_db.py
+python migrate_file_size.py
 
 # Run backend
 cd backend
@@ -213,6 +180,7 @@ DATABASE_URL=sqlite:///./data/intelliknow.db
 #### Step 4: Set Webhook (for production deployment)
 
 After deploying to cloud:
+
 ```bash
 curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=https://your-backend-url.com/webhook/telegram"
 ```
@@ -278,6 +246,7 @@ curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=https:
 **Issue 1: Cannot send messages to the bot**
 
 If the UI shows "Sending messages to this app has been turned off":
+
 - Go to Slack API Dashboard (api.slack.com/apps) and select your app
 - Navigate to "App Home" under "Features"
 - Scroll to "Show Tabs" section
@@ -288,6 +257,7 @@ If the UI shows "Sending messages to this app has been turned off":
 **Issue 2: Finding the Admin Channel ID**
 
 To get the Channel ID for dashboard configuration:
+
 - Log into Slack web version in a browser
 - Navigate to the channel or DM with the bot
 - Check the URL bar (e.g., `app.slack.com/client/T1234567/C987654321`)
@@ -338,16 +308,16 @@ Bot: According to the HR Policy document, employees receive:
 
 ## 🛠️ Tech Stack
 
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| Backend API | FastAPI | REST API and webhook handlers |
-| Database | SQLite | Metadata storage |
-| Vector Store | FAISS | Semantic search |
-| LLM | Qwen API (local) / Gemini API (production) | Embeddings & response generation |
-| Document Parsing | Aliyun Document Mind API + PyPDF2/python-docx | Text extraction with fallback |
-| Admin UI | Streamlit | Management dashboard |
-| Telegram | python-telegram-bot | Bot integration |
-| Slack | slack-sdk | Bot integration |
+| Component        | Technology                                    | Purpose                          |
+| ---------------- | --------------------------------------------- | -------------------------------- |
+| Backend API      | FastAPI                                       | REST API and webhook handlers    |
+| Database         | SQLite                                        | Metadata storage                 |
+| Vector Store     | FAISS                                         | Semantic search                  |
+| LLM              | Qwen API (local) / Gemini API (production)    | Embeddings & response generation |
+| Document Parsing | Aliyun Document Mind API + PyPDF2/python-docx | Text extraction with fallback    |
+| Admin UI         | Streamlit                                     | Management dashboard             |
+| Telegram         | python-telegram-bot                           | Bot integration                  |
+| Slack            | slack-sdk                                     | Bot integration                  |
 
 ---
 
@@ -356,6 +326,7 @@ Bot: According to the HR Policy document, employees receive:
 ### Core Endpoints
 
 #### Query API
+
 ```bash
 POST /api/query
 Content-Type: application/json
@@ -376,6 +347,7 @@ Response:
 ```
 
 #### Document Upload
+
 ```bash
 POST /api/documents/upload
 Content-Type: multipart/form-data
@@ -392,6 +364,7 @@ Response:
 ```
 
 #### List Documents
+
 ```bash
 GET /api/documents
 
@@ -441,6 +414,7 @@ See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed deployment instructions.
 ### Quick Deploy to Cloud
 
 **Backend (Render)**:
+
 1. Push code to GitHub
 2. Create Web Service on [Render](https://render.com)
 3. Connect repository, set root directory to `backend`
@@ -448,6 +422,7 @@ See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed deployment instructions.
 5. Deploy
 
 **Dashboard (Streamlit Cloud)**:
+
 1. Visit [Streamlit Cloud](https://streamlit.io/cloud)
 2. Connect GitHub repository
 3. Set main file to `dashboard/app.py`
@@ -461,6 +436,7 @@ See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed deployment instructions.
 ### Common Issues
 
 **1. "Database not found" error**
+
 ```bash
 # Ensure data directory exists
 mkdir -p backend/data
@@ -468,23 +444,28 @@ python init_intents.py
 ```
 
 **2. "FAISS dimension mismatch"**
+
 ```bash
 # Delete existing index and rebuild
 rm -rf backend/data/faiss_index/*
+python backend/rebuild_faiss.py
 # Re-upload documents via dashboard
 ```
 
 **3. "Telegram webhook not responding"**
+
 - Check bot token is correct
 - Verify webhook URL is publicly accessible (use ngrok for local testing)
 - Check backend logs: `uvicorn app.main:app --log-level debug`
 
 **4. "Slack events not received"**
+
 - Verify Request URL in Slack app settings shows ✓ verified
 - Check signing secret matches .env file
 - Ensure bot is invited to the channel
 
 **5. "Response time >3 seconds"**
+
 - Check Qwen API latency
 - Verify FAISS index is loaded (check logs)
 - Consider reducing chunk retrieval count (default: 5)
@@ -546,7 +527,7 @@ intelliknow-kms/
 
 ## 📝 Documentation
 
-- **[Full Documentation](docs/README.md)** - Comprehensive project documentation
+- **[Full Documentation](docs/TechnicalDocumentation.md)** - Comprehensive project documentation
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Cloud and local deployment
 - **[AI Usage Reflection](docs/AI_USAGE_REFLECTION.md)** - AI tools strategy and impact
 
@@ -576,7 +557,3 @@ MIT License - see [LICENSE](LICENSE) file for details
 ## 📧 Contact
 
 For questions about this project, please open an issue on GitHub.
-
----
-
-**Built with ❤️ in 7 days as a Tech Lead (Gen AI Focus) interview case study**

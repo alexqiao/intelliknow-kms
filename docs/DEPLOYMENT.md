@@ -1,6 +1,7 @@
 # Deployment Guide - IntelliKnow KMS
 
 ## Table of Contents
+
 - [Local Deployment](#local-deployment)
 - [Cloud Deployment](#cloud-deployment)
 - [Webhook Configuration](#webhook-configuration)
@@ -97,6 +98,7 @@ Copy the ngrok HTTPS URL (e.g., `https://abc123.ngrok.io`) and use it as the web
 #### Step 1: Prepare Repository
 
 Ensure your code is pushed to GitHub:
+
 ```bash
 git add .
 git commit -m "Prepare for deployment"
@@ -114,25 +116,29 @@ git push origin main
 2. Connect your GitHub repository: `alexqiao/intelliknow-kms`
 3. Configure settings:
 
-| Setting | Value |
-|---------|-------|
-| Name | `intelliknow-kms-api` |
-| Root Directory | `backend` |
-| Runtime | Python 3 |
-| Build Command | `pip install -r requirements.txt` |
-| Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
-| Instance Type | Free (or Starter for persistent disk) |
+| Setting        | Value                                              |
+| -------------- | -------------------------------------------------- |
+| Name           | `intelliknow-kms-api`                              |
+| Root Directory | `backend`                                          |
+| Runtime        | Python 3                                           |
+| Build Command  | `pip install -r requirements.txt`                  |
+| Start Command  | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+| Instance Type  | Free (or Starter for persistent disk)              |
 
 #### Step 4: Configure Environment Variables
 
 In Render dashboard → Environment:
 
 ```
-QWEN_API_KEY=sk-your-qwen-api-key
-TELEGRAM_BOT_TOKEN=your-telegram-bot-token
-SLACK_BOT_TOKEN=xoxb-your-slack-bot-token
-SLACK_SIGNING_SECRET=your-slack-signing-secret
+QWEN_API_KEY=your_qwen_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+LLM_PROVIDER=gemini
 DATABASE_URL=sqlite:///./data/intelliknow.db
+TELEGRAM_BOT_TOKEN=your_telegram_token
+SLACK_BOT_TOKEN=your_slack_token
+SLACK_SIGNING_SECRET=your_slack_secret
+ALIYUN_ACCESS_KEY_ID=your_aliyun_access_key_id
+ALIYUN_ACCESS_KEY_SECRET=your_aliyun_access_key_secret
 ```
 
 #### Step 5: Enable Persistent Disk (Recommended)
@@ -158,6 +164,7 @@ Wait for build to complete (~2-5 minutes). Your backend URL will be: `https://in
 #### Step 1: Prepare Streamlit Config
 
 Ensure `dashboard/requirements.txt` includes all dependencies:
+
 ```
 streamlit==1.30.0
 pandas==2.1.4
@@ -172,17 +179,18 @@ requests==2.31.0
 3. Connect GitHub repository: `alexqiao/intelliknow-kms`
 4. Configure:
 
-| Setting | Value |
-|---------|-------|
-| Repository | `alexqiao/intelliknow-kms` |
-| Branch | `main` |
-| Main file path | `dashboard/app.py` |
-| Python version | 3.11 |
+| Setting        | Value                      |
+| -------------- | -------------------------- |
+| Repository     | `alexqiao/intelliknow-kms` |
+| Branch         | `main`                     |
+| Main file path | `dashboard/app.py`         |
+| Python version | 3.11                       |
 
 5. Add secrets (Settings → Secrets):
-```toml
-BACKEND_URL = "https://intelliknow-kms-api.onrender.com"
-```
+   
+   ```toml
+   BACKEND_URL = "https://intelliknow-kms-api.onrender.com"
+   ```
 
 Or use environment variables in Advanced Settings.
 
@@ -207,6 +215,7 @@ curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getWebhookInfo"
 ```
 
 Expected response:
+
 ```json
 {
   "ok": true,
@@ -232,31 +241,18 @@ Expected response:
 
 ---
 
-## Environment Variables
-
-| Variable | Required | Description | Example |
-|----------|----------|-------------|---------|
-| `QWEN_API_KEY` | Yes | Qwen LLM API key | `sk-abc123...` |
-| `TELEGRAM_BOT_TOKEN` | No* | Telegram Bot API token | `123456:ABC-DEF...` |
-| `SLACK_BOT_TOKEN` | No* | Slack Bot OAuth token | `xoxb-123-456...` |
-| `SLACK_SIGNING_SECRET` | No* | Slack app signing secret | `abc123def...` |
-| `DATABASE_URL` | No | SQLite database path | `sqlite:///./data/intelliknow.db` |
-| `BACKEND_URL` | Dashboard | Backend API URL | `http://localhost:8000` |
-
-*At least one frontend integration (Telegram or Slack) is required for the demo.
-
----
-
 ## Verification Checklist
 
 After deployment, verify each component works:
 
 ### Backend API
+
 - [ ] Health check: `curl https://your-backend.onrender.com/docs`
 - [ ] List intents: `curl https://your-backend.onrender.com/api/intents`
 - [ ] List documents: `curl https://your-backend.onrender.com/api/documents`
 
 ### Dashboard
+
 - [ ] Homepage loads with statistics
 - [ ] "Frontend Integration" page shows connection status
 - [ ] "Knowledge Base" page lists documents
@@ -264,24 +260,28 @@ After deployment, verify each component works:
 - [ ] "Analytics" page shows charts
 
 ### Telegram Integration
+
 - [ ] Send message to bot → receive response
 - [ ] Response contains source citations
 - [ ] Response time < 3 seconds
 - [ ] Query logged in analytics
 
 ### Slack Integration
+
 - [ ] Send message in channel → bot responds
 - [ ] Response formatted correctly
 - [ ] Response time < 3 seconds
 - [ ] Query logged in analytics
 
 ### Document Upload
+
 - [ ] Upload PDF via dashboard → processed successfully
 - [ ] Upload DOCX via dashboard → processed successfully
 - [ ] Document appears in library with chunk count and size
 - [ ] Query related to document returns relevant results
 
 ### Intent Classification
+
 - [ ] HR query → classified as "HR"
 - [ ] Legal query → classified as "Legal"
 - [ ] Finance query → classified as "Finance"
@@ -294,6 +294,7 @@ After deployment, verify each component works:
 ### Common Issues
 
 **1. "Database not found" error**
+
 ```bash
 # Create data directory
 mkdir -p backend/data
@@ -302,6 +303,7 @@ python init_intents.py
 ```
 
 **2. FAISS dimension mismatch**
+
 ```bash
 # The system uses 1024-dimensional embeddings (text-embedding-v3)
 # If you see dimension errors, delete and rebuild:
@@ -310,32 +312,38 @@ rm -rf backend/data/faiss_index/*
 ```
 
 **3. Render deployment: "No module named 'app'"**
+
 - Ensure Root Directory is set to `backend` in Render settings
 - Check that `requirements.txt` is in the `backend/` directory
 
 **4. Streamlit Cloud: "BACKEND_URL not found"**
+
 - Add `BACKEND_URL` in Streamlit Cloud → Settings → Secrets:
+  
   ```toml
   BACKEND_URL = "https://your-backend.onrender.com"
   ```
 
 **5. Telegram webhook not responding**
+
 - Verify webhook URL is correct: `curl https://api.telegram.org/bot<TOKEN>/getWebhookInfo`
 - Check Render logs for errors: Render Dashboard → Logs
 - Ensure bot token in .env matches BotFather token
 
 **6. Slack events not received**
+
 - Verify Request URL shows green checkmark in Slack API dashboard
 - Check signing secret matches
 - Ensure bot is invited to the channel: `/invite @YourBot`
 
 **7. Render free tier cold starts**
+
 - Free tier services spin down after 15 minutes of inactivity
 - First request after idle may take 30-60 seconds
 - Solution: Upgrade to Starter ($7/month) for always-on service
 
 **8. Response time exceeds 3 seconds**
-- Check Qwen API latency (may vary by region)
+
+- Check Gemini API latency (may vary by region)
 - Reduce `top_k` in orchestrator from 5 to 3
 - Ensure FAISS index is loaded (check logs for "loading index")
-- Consider using `qwen-turbo` instead of `qwen-plus` for faster responses
