@@ -27,7 +27,9 @@ with st.form("new_intent"):
                 if response.status_code == 200:
                     st.success(f"✅ Intent '{name}' created")
                     st.rerun()
-            except:
+                else:
+                    st.error(f"Failed to create intent: {response.text}")
+            except requests.exceptions.RequestException as e:
                 st.error("Cannot connect to backend")
 
 st.markdown("---")
@@ -91,13 +93,19 @@ try:
                         col1, col2 = st.columns(2)
                         with col1:
                             if st.form_submit_button("Save"):
-                                requests.put(f"{BACKEND_URL}/api/intents/{intent['id']}", json={
-                                    "name": new_name,
-                                    "description": new_desc,
-                                    "keywords": new_keywords
-                                })
-                                st.session_state[f"editing_{intent['id']}"] = False
-                                st.rerun()
+                                try:
+                                    response = requests.put(f"{BACKEND_URL}/api/intents/{intent['id']}", json={
+                                        "name": new_name,
+                                        "description": new_desc,
+                                        "keywords": new_keywords
+                                    })
+                                    if response.status_code == 200:
+                                        st.session_state[f"editing_{intent['id']}"] = False
+                                        st.rerun()
+                                    else:
+                                        st.error(f"Failed to update intent: {response.text}")
+                                except requests.exceptions.RequestException as e:
+                                    st.error("Cannot connect to backend")
                         with col2:
                             if st.form_submit_button("Cancel"):
                                 st.session_state[f"editing_{intent['id']}"] = False
