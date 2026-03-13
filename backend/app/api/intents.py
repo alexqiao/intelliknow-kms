@@ -17,6 +17,9 @@ async def list_intents(db: Session = Depends(get_db)):
 
 @router.post("/intents")
 async def create_intent(intent: IntentCreate, db: Session = Depends(get_db)):
+    existing = db.query(Intent).filter(Intent.name == intent.name).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Intent name already exists")
     new_intent = Intent(name=intent.name, description=intent.description, keywords=intent.keywords)
     db.add(new_intent)
     db.commit()
@@ -28,6 +31,9 @@ async def update_intent(intent_id: int, intent: IntentCreate, db: Session = Depe
     existing = db.query(Intent).filter(Intent.id == intent_id).first()
     if not existing:
         raise HTTPException(404, "Intent not found")
+    name_conflict = db.query(Intent).filter(Intent.name == intent.name, Intent.id != intent_id).first()
+    if name_conflict:
+        raise HTTPException(status_code=400, detail="Intent name is already in use by another intent")
     existing.name = intent.name
     existing.description = intent.description
     existing.keywords = intent.keywords
