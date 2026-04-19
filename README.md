@@ -535,7 +535,7 @@ intelliknow-kms/
 
 ## 🤝 Contributing
 
-This is a case study project for interview purposes. For questions or feedback, please open an issue.
+For questions or feedback, please open an issue.
 
 ---
 
