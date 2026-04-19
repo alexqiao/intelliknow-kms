@@ -3,6 +3,7 @@
 **Gen AI-Powered Knowledge Management System**
 
 A production-ready KMS that addresses enterprise pain points: fragmented information, inefficient knowledge retrieval, and siloed communication channels. 
+
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-blue)](https://github.com/alexqiao/intelliknow-kms)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
